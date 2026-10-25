@@ -1,6 +1,7 @@
 # Felles ESPHome-effekter for adresserbare LED-striper.
 # Importeres fra GitHub som package. Driver, pin, antall LED og nettverk
-# defineres lokalt. Lokal light skal bruke id: stripe.
+# defineres lokalt. Lokal light skal bruke id: !extend stripe.
+# Dette er viktig: uten !extend får pakken en light uten platform.
 light:
   - id: stripe
     effects:
