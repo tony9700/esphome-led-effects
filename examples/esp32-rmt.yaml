@@ -1,0 +1,40 @@
+# Eksempel: ESP32 med WS2811. Tilpass GPIO, fargerekkefølge og antall LED-er.
+# Ikke kopier denne filen direkte til en eksisterende enhet uten tilpasning.
+esphome:
+  name: led-ws2811-eksempel
+
+esp32:
+  board: esp32dev
+
+logger:
+api:
+  encryption:
+    key: !secret api_encryption_key
+ota:
+  - platform: esphome
+    password: !secret ota_password
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+packages:
+  led_animasjoner:
+    url: https://github.com/tony9700/esphome-led-effects
+    files:
+      - effects/common.yaml
+    ref: main
+    refresh: 5min
+
+light:
+  - platform: esp32_rmt_led_strip
+    id: stripe
+    name: "WS2811 LED"
+    pin: GPIO17
+    chipset: WS2811
+    channel_colors: RGB
+    num_leds: 100
+    max_refresh_rate: 25ms
+    rmt_symbols: 128
+    use_psram: false
+    restore_mode: RESTORE_DEFAULT_OFF
+    # Effekter fra GitHub legges til via id: stripe.
