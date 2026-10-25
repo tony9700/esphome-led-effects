@@ -19,15 +19,17 @@ packages:
     refresh: 5min
 ```
 
-Den lokale `light:`-konfigurasjonen må bruke **`id: stripe`**.
-Da merges effektlisten fra pakken inn på samme lys.
+Den lokale `light:`-konfigurasjonen må bruke **`id: !extend stripe`**.
+`!extend` er nødvendig for at ESPHome skal slå GitHub-pakkens effektliste
+sammen med LED-driveren. Uten `!extend` kan du få feilen
+`'light' requires a 'platform' key but it was not specified.`
 
 Eksempel for ESP32 og WS2811:
 
 ```yaml
 light:
   - platform: esp32_rmt_led_strip
-    id: stripe
+    id: !extend stripe
     name: "WS2811 LED"
     pin: GPIO17
     chipset: WS2811
