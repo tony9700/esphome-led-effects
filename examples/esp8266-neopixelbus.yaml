@@ -27,7 +27,7 @@ packages:
 
 light:
   - platform: neopixelbus
-    id: stripe
+    id: !extend stripe
     name: "TV stue tak"
     type: RGB
     variant: WS2811
