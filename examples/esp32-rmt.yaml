@@ -27,7 +27,7 @@ packages:
 
 light:
   - platform: esp32_rmt_led_strip
-    id: stripe
+    id: !extend stripe
     name: "WS2811 LED"
     pin: GPIO17
     chipset: WS2811
