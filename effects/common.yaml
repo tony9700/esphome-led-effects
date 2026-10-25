@@ -1,0 +1,144 @@
+# Felles ESPHome-effekter for adresserbare LED-striper.
+# Importeres fra GitHub som package. Driver, pin, antall LED og nettverk
+# defineres lokalt. Lokal light skal bruke id: stripe.
+light:
+  - id: stripe
+    effects:
+      - addressable_rainbow:
+          name: "Rainbow"
+      - addressable_random_twinkle:
+          name: "Random Twinkle"
+      - addressable_twinkle:
+          name: "Twinkle"
+      - addressable_fireworks:
+          name: "Fireworks"
+      - addressable_flicker:
+          name: "Flicker"
+
+      - addressable_lambda:
+          name: "Blue Scan"
+          update_interval: 25ms
+          lambda: |-
+            const int n = it.size();
+            if (n <= 0) return;
+            static int pos = 0;
+            static int direction = 1;
+            if (initial_run || pos >= n || pos < 0) {
+              pos = 0;
+              direction = 1;
+            }
+            it.all() = Color(0, 0, 0);
+            it[pos] = Color(0, 0, 255);
+            if (n > 1) {
+              pos += direction;
+              if (pos >= n) {
+                direction = -1;
+                pos = n - 2;
+              } else if (pos < 0) {
+                direction = 1;
+                pos = 1;
+              }
+            }
+
+      - addressable_lambda:
+          name: "Gold Glitter"
+          update_interval: 35ms
+          lambda: |-
+            const int n = it.size();
+            if (n <= 0) return;
+            it.all() = Color(218, 165, 32);
+            if ((esphome::random_uint32() % 7) == 0) {
+              const int p = esphome::random_uint32() % n;
+              it[p] = Color(255, 255, 255);
+            }
+
+      - addressable_lambda:
+          name: "Fire"
+          update_interval: 40ms
+          lambda: |-
+            const int n = it.size();
+            if (n <= 0) return;
+            // Dynamisk varmetabell: trygt for både 64 og 240 LED-er.
+            static std::vector<uint8_t> heat;
+            if (initial_run || heat.size() != static_cast<size_t>(n)) {
+              heat.assign(n, 0);
+            }
+            const int cooling = 55;
+            const int sparking = 110;
+            const int cool_max = (cooling * 10 / n) + 2;
+            for (int i = 0; i < n; ++i) {
+              const int cooldown = esphome::random_uint32() % cool_max;
+              heat[i] = cooldown >= heat[i] ? 0 : heat[i] - cooldown;
+            }
+            for (int i = n - 1; i >= 2; --i) {
+              heat[i] = (int(heat[i - 1]) + int(heat[i - 2]) + int(heat[i - 2])) / 3;
+            }
+            if ((esphome::random_uint32() % 255) < sparking) {
+              const int zone = n < 7 ? n : 7;
+              const int p = esphome::random_uint32() % zone;
+              const int value = int(heat[p]) + 160 + (esphome::random_uint32() % 95);
+              heat[p] = value > 255 ? 255 : value;
+            }
+            for (int i = 0; i < n; ++i) {
+              const uint8_t t = int(heat[i]) * 191 / 255;
+              const uint8_t ramp = (t & 0x3F) << 2;
+              if (t > 0x80) {
+                it[i] = Color(255, 255, ramp);
+              } else if (t > 0x40) {
+                it[i] = Color(255, ramp, 0);
+              } else {
+                it[i] = Color(ramp, 0, 0);
+              }
+            }
+
+      - addressable_lambda:
+          name: "Aurora Borealis"
+          update_interval: 50ms
+          lambda: |-
+            const int n = it.size();
+            if (n <= 0) return;
+            static float phase = 0.0f;
+            if (initial_run) phase = 0.0f;
+            for (int i = 0; i < n; ++i) {
+              const float wave = 0.5f + 0.5f * sinf(i * 0.15f + phase);
+              const float detail = 0.5f + 0.5f * sinf(i * 0.041f - phase * 0.63f);
+              const float brightness = 0.13f + 0.70f * wave * detail;
+              const int green = static_cast<int>(190.0f * brightness);
+              const int blue = static_cast<int>(105.0f * brightness + 12.0f * detail);
+              const int red = static_cast<int>(18.0f * brightness);
+              it[i] = Color(red, green, blue);
+            }
+            phase += 0.055f;
+            if (phase > 6.283185f) phase -= 6.283185f;
+
+      - addressable_lambda:
+          name: "Halloween - Haunted"
+          update_interval: 50ms
+          lambda: |-
+            const int n = it.size();
+            if (n <= 0) return;
+            static uint32_t frame = 0;
+            if (initial_run) frame = 0;
+            const float t = static_cast<float>(frame++);
+            const float width = n < 70 ? 5.0f : n / 14.0f;
+            for (int i = 0; i < n; ++i) {
+              const float glow = 0.5f + 0.5f * sinf(i * 0.16f + t * 0.11f);
+              int r = 70 + static_cast<int>(70.0f * glow);
+              int g = 10 + static_cast<int>(24.0f * glow);
+              int b = 1;
+              for (int ghost = 0; ghost < 2; ++ghost) {
+                const float center = fmodf(t * 0.55f + ghost * (n / 2.0f), static_cast<float>(n));
+                float dist = fabsf(static_cast<float>(i) - center);
+                if (dist > n / 2.0f) dist = n - dist;
+                if (dist < width) {
+                  const float blend = (width - dist) / width;
+                  r = static_cast<int>(r * (1.0f - blend) + 98.0f * blend);
+                  g = static_cast<int>(g * (1.0f - blend) + 8.0f * blend);
+                  b = static_cast<int>(b * (1.0f - blend) + 178.0f * blend);
+                }
+              }
+              if ((esphome::random_uint32() % 1000) < 2) {
+                r = 235; g = 68; b = 6;
+              }
+              it[i] = Color(r, g, b);
+            }
